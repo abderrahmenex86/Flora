@@ -22,7 +22,7 @@ search and a run-tracking layer that keeps every experiment comparable.
 ## Run it
 
 ```bash
-git clone https://github.com/abderrahmeneex86/Plant-Species-Classifier
+git clone https://github.com/abderrahmenex86/flora
 cd Plant-Species-Classifier
 pip install -r requirements.txt
 
@@ -68,7 +68,7 @@ Python · PyTorch · torchvision · Optuna · TorchMetrics · Matplotlib
 
 ## Related
 
-- [Plant-Disease-Segmentation](https://github.com/abderrahmeneex86/Plant-Disease-Segmentation)
+- [Plant-Disease-Segmentation](https://github.com/abderrahmenex86/Plant-Disease-Segmentation)
   for lesion segmentation
-- [FloraLens](https://github.com/abderrahmeneex86/FloraLens) runs a species model
+- [FloraLens](https://github.com/abderrahmenex86/FloraLens) runs a species model
   on Android
