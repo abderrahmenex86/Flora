@@ -1,115 +1,74 @@
 # Plant Species Classifier
 
-This project is a modular, hardware-optimized deep learning training and evaluation pipeline built in pure PyTorch to classify plant species. It generates high-efficiency classification weights utilized within the offline [FloraLens](https://github.com/abderrahmenex86/FloraLens) ecosystem.
+A training and evaluation pipeline for plant species classification in plain
+PyTorch. MobileNetV3-Large with a replaced head, plus Optuna for architecture
+search and a run-tracking layer that keeps every experiment comparable.
 
-This pipeline strictly implements a flat directory architecture, dynamic hyperparameter configuration, layer-stratified optimization, and defensive execution checks.
+![Experiment comparison](docs/figs/experiments_comparison_metrics.png)
 
-______________________________________________________________________
+## What it does
 
-## Directory Architecture
+- Trains MobileNetV3-Large with a modified dropout and classification head, at a
+  configurable input size.
+- Switches loss between cross-entropy and focal loss, and builds optimisers and
+  schedulers per layer group so the head can train faster than the backbone.
+- Runs a sanity check on sliced inputs before a long run, verifying tensor
+  bounds, gradients, and parameter updates.
+- Searches architecture and training hyperparameters with Optuna, writing each
+  study into the run directory.
+- Plots cross-entropy, top-1 accuracy, and macro F1 side by side across
+  experiments, reading `training_history.json` from each run.
 
-- `dataset.py`: Handles raw image parsing, `torchvision.transforms.v2` preprocessing pipelines, and hardware-specific `DataLoader` configuration (pin memory, prefetching, persistent workers).
-- `models.py`: Houses the network architecture (MobileNetV3-Large with modified dropout and classification head) and target losses, including cross-entropy and focal loss formulations.
-- `factory.py`: The assembly layer responsible for constructing model instances, stratified optimizers, and learning rate schedulers.
-- `trainer.py`: Holds the main execution loop for training and evaluation epochs, along with tracking metrics, saving checkpoints, and loading past runs.
-- `tester.py`: Orchestrates a quick sanity check with sliced inputs to verify tensor bounds, gradients, and parameters before launching scaled training.
-- `optimize.py`: Manages automatic hyperparameter tuning using Optuna studies via a silenced, global progress-tracked interface.
-- `infer.py`: Runs smart target-based predictions by loading historic configuration files directly from saved run directories.
-- `main.py`: The single dispatcher entry point for core ML lifecycle operations (`test`, `train`, `optimize`, `infer`).
-- `tools.py`: Helper scripts for utilities like data layout verification and training metric plots.
-
-______________________________________________________________________
-
-## Benchmarking & Comparative Visualization
-
-To analyze training dynamics across multiple iterations and parameter configurations, the system supports side-by-side performance benchmarking.
-
-![Experimental Comparisons](docs/figs/experiments_comparison_metrics.png)
-
-A comparative evaluation tool (`plot.py` within the experiments workspace directory) automates execution tracking and run verification:
-
-1. **Abstract Syntax Tree (AST) Parsing**: The script scans subdirectories containing both `training_history.json` and `train.py`. It uses Python's native `ast` module to dynamically extract hyperparameter configurations (such as epochs, batch size, learning rates, and weight decay) directly from the run code. This bypasses the need for specific, hardcoded folder naming schemes.
-1. **Side-by-Side Performance Mapping**: It compiles the data into a three-panel dashboard plotting Cross-Entropy Loss, Top-1 Accuracy, and Macro F1-Score curves across both training (solid curves) and validation (dashed curves) states.
-1. **Explicit Legend Formatting**: The extracted parameters are compiled directly into explicit, descriptive legend labels mapping each curve to its corresponding run configuration.
-
-To execute the tracking compiler and update the comparative dashboard, navigate to your experiments directory and execute:
+## Run it
 
 ```bash
-python plot.py
-```
+git clone https://github.com/abderrahmeneex86/Plant-Species-Classifier
+cd Plant-Species-Classifier
+pip install -r requirements.txt
 
-______________________________________________________________________
-
-## Execution Sequence
-
-To prepare, validate, optimize, and execute models on your dataset, follow this standardized execution path.
-
-### 1. Verify Dataset Alignment
-
-Ensure your dataset structures (by default, `dataset/plantnet_300K/images/train` and `dataset/plantnet_300K/images/val`) are correctly formatted, categories match, and image files are uncorrupted:
-
-```bash
 python tools.py --mode verify
-```
-
-### 2. Run Sanity Check
-
-Test basic network operations on a slice of 5 images. This step validates tensor dimensions, asserts that the forward and backward passes execute correctly, checks that gradients are calculated for active weights, and tests parameter optimizer grouping:
-
-```bash
 python main.py --mode test
-```
-
-### 3. Hyperparameter Optimization
-
-Execute an Optuna study on a 512-image training slice across 10 epochs. When finished, it prints a terminal-ready string containing the best learning rate and weight decay parameters:
-
-```bash
 python main.py --mode optimize
+python main.py --mode train --learning_rate 0.001 --weight_decay 0.01 \
+  --loss_type focal --num_workers_train 8
+python main.py --mode infer \
+  --run_directory artifacts/YYYYMMDD_HHMMSS_mobilenetv3_large \
+  --image_path path/to/test_image.jpg
 ```
 
-### 4. Execute Full Training
+Resume an interrupted run with `python main.py --mode train --resume
+--resume_directory artifacts/<run>`, and refresh the comparison dashboard with
+`python tools.py --mode plot --run_directory artifacts/<run>`.
 
-Train the network using custom configurations or the exact arguments outputted by the optimization run. Additional parameters can be passed as dynamic flags to override default configurations on the fly:
+## How runs are tracked
 
-```bash
-python main.py --mode train --learning_rate 0.001 --weight_decay 0.01 --loss_type focal --num_workers_train 8
-```
+Each run writes a directory under `artifacts/` containing the resolved
+configuration, `training_history.json`, and checkpoints. The plotting tool walks
+those directories, parses each `train.py` call with `ast` to recover the
+arguments that produced the run, and builds the legend from them, so the
+dashboard cannot drift from what was actually executed.
 
-### 5. Resuming from Interrupted States
+## Results
 
-If a run was stopped, restore training from the last checkpoint folder. The script loads weights, optimizers, learning rate histories, scheduler states, and epoch counts to resume without disruption:
+The repository publishes comparison plots rather than a results table. Per-run
+metrics are in each `artifacts/<run>/training_history.json`, and the dashboard is
+generated from those files.
 
-```bash
-python main.py --mode train --resume --resume_directory artifacts/YYYYMMDD_HHMMSS_mobilenetv3_large
-```
+## Limits
 
-### 6. Analyze History
+- One dataset. Species outside the training distribution fall back to the most
+  similar class with no rejection path.
+- The comparison dashboard is only as reliable as the run directories it reads;
+  runs started outside `main.py` will not appear.
+- No published accuracy figure, so results have to be reproduced from a run.
 
-Generate validation loss, top-1 accuracy, and macro F1 metric trend graphs from a selected training epoch:
+## Stack
 
-```bash
-python tools.py --mode plot --run_directory artifacts/YYYYMMDD_HHMMSS_mobilenetv3_large
-```
+Python · PyTorch · torchvision · Optuna · TorchMetrics · Matplotlib
 
-### 7. Run Smart Inference
+## Related
 
-Pass a specific historic output folder and a sample image path. The script dynamically reads `hyperparameters.json` and `class_names.json`, designs the model, loads `best_model.pth`, and outputs the prediction:
-
-```bash
-python main.py --mode infer --run_directory artifacts/YYYYMMDD_HHMMSS_mobilenetv3_large --image_path path/to/test_image.jpg
-```
-
-______________________________________________________________________
-
-## System Requirements
-
-- Python 3.10+
-- CUDA-capable GPU (highly recommended)
-- Dependencies listed in `requirements.txt` (including `torch`, `torchvision`, `torchmetrics`, `torchinfo`, `optuna`, `matplotlib`, and `tqdm`)
-
-## Related Projects
-
-- [FloraLens](https://github.com/abderrahmenex86/FloraLens)
-- [Pesti](https://github.com/abderrahmenex86/pesti)
-- [Plant-Disease-Segmentation](https://github.com/abderrahmenex86/Plant-Disease-Segmentation)
+- [Plant-Disease-Segmentation](https://github.com/abderrahmeneex86/Plant-Disease-Segmentation)
+  for lesion segmentation
+- [FloraLens](https://github.com/abderrahmeneex86/FloraLens) runs a species model
+  on Android
