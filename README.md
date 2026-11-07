@@ -1,4 +1,4 @@
-# Plant Species Classifier
+# Flora
 
 A training and evaluation pipeline for plant species classification in plain
 PyTorch. MobileNetV3-Large with a replaced head, plus Optuna for architecture
@@ -22,8 +22,8 @@ search and a run-tracking layer that keeps every experiment comparable.
 ## Run it
 
 ```bash
-git clone https://github.com/abderrahmenex86/Plant-Species-Classifier
-cd Plant-Species-Classifier
+git clone https://github.com/abderrahmenex86/Flora
+cd Flora
 pip install -r requirements.txt
 
 python tools.py --mode verify
@@ -68,7 +68,7 @@ Python · PyTorch · torchvision · Optuna · TorchMetrics · Matplotlib
 
 ## Related
 
-- [Plant-Disease-Segmentation](https://github.com/abderrahmenex86/Plant-Disease-Segmentation)
-  for lesion segmentation
-- [FloraLens](https://github.com/abderrahmenex86/FloraLens) runs a species model
-  on Android
+- [Entomi](https://github.com/abderrahmenex86/Entomi) for insect and pest
+  classification
+- [Lesioni](https://github.com/abderrahmenex86/Lesioni) for lesion
+  segmentation
