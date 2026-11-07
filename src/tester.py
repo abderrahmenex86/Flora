@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import DataLoader, Subset
 
-from factory import (
+from src.factory import (
     create_loss_criterion,
     create_model_instance,
     create_stratified_optimizer,

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from models import MulticlassFocalLoss, PlantClassifier
+from src.models import MulticlassFocalLoss, PlantClassifier
 
 
 def create_model_instance(num_classes):

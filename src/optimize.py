@@ -4,12 +4,12 @@ from torch.utils.data import DataLoader, Subset
 from torchmetrics.classification import MulticlassAccuracy, MulticlassF1Score
 from tqdm.auto import tqdm
 
-from factory import (
+from src.factory import (
     create_loss_criterion,
     create_model_instance,
     create_stratified_optimizer,
 )
-from trainer import run_evaluation_epoch, run_training_epoch
+from src.trainer import run_evaluation_epoch, run_training_epoch
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 

@@ -5,7 +5,7 @@ import torch
 from PIL import Image
 from torchvision.transforms import v2
 
-from factory import create_model_instance
+from src.factory import create_model_instance
 
 
 def execute_inference(run_directory_path, input_image_path):

@@ -8,7 +8,7 @@ from torchinfo import summary
 from torchmetrics.classification import MulticlassAccuracy, MulticlassF1Score
 from tqdm.auto import tqdm
 
-from factory import (
+from src.factory import (
     create_learning_rate_scheduler,
     create_loss_criterion,
     create_model_instance,
